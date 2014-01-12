@@ -2199,6 +2199,25 @@ interface path might change between reboots of a guest or across migrations.
 
 =back
 
++=head2 Plugin C<load>
+
+The I<Load plugin> collects the system load. These numbers give a rough overview
+over the utilization of a machine. The system load is defined as the number of
+runnable tasks in the run-queue and is provided by many operating systems as a
+one, five or fifteen minute average.
+
+The following configuration options are available:
+
+=over 4
+
+=item B<ReportRelative> B<false>|B<true>
+
+When enabled, system load divided by number of available CPU cores is reported
+for intervals 1 min, 5 min and 15 min. Defaults to false.
+
+=back
+
+
 =head2 Plugin C<logfile>
 
 =over 4
@@ -6085,7 +6104,7 @@ Synopsis:
    <Node "example">
      Host "localhost"
      Port "2003"
-     Protocol "udp"
+     Protocol "tcp"
      LogSendErrors true
      Prefix "collectd"
    </Node>
@@ -6288,6 +6307,7 @@ Synopsis:
      TTLFactor 2.0
    </Node>
    Tag "foobar"
+   Attribute "foo" "bar"
  </Plugin>
 
 The following options are understood by the I<write_riemann plugin>:
@@ -6348,6 +6368,11 @@ default value.
 Add the given string as an additional tag to the metric being sent to
 I<Riemann>.
 
+=item B<Attribute> I<String> I<String>
+
+Consider the two given strings to be the key and value of an additional
+attribute for each metric being sent out to I<Riemann>.
+
 =back
 
 =head1 THRESHOLD CONFIGURATION
@@ -6382,7 +6407,7 @@ When a value comes within range again or is received after it was missing, an
 Here is a configuration example to get you started. Read below for more
 information.
 
- <Threshold>
+ <Plugin threshold>
    <Type "foo">
      WarningMin    0.00
      WarningMax 1000.00
@@ -6413,7 +6438,7 @@ information.
        </Type>
      </Plugin>
    </Host>
- </Threshold>
+ </Plugin>
 
 There are basically two types of configuration statements: The C<Host>,
 C<Plugin>, and C<Type> blocks select the value for which a threshold should be
