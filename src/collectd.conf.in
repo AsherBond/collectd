@@ -52,12 +52,18 @@
 
 @LOAD_PLUGIN_SYSLOG@LoadPlugin syslog
 @LOAD_PLUGIN_LOGFILE@LoadPlugin logfile
+@LOAD_PLUGIN_LOG_LOGSTASH@LoadPlugin log_logstash
 
 #<Plugin logfile>
 #	LogLevel @DEFAULT_LOG_LEVEL@
 #	File STDOUT
 #	Timestamp true
 #	PrintSeverity false
+#</Plugin>
+
+#<Plugin log_logstash>
+#	LogLevel @DEFAULT_LOG_LEVEL@
+#	File "@localstatedir@/log/@PACKAGE_NAME@.json.log"
 #</Plugin>
 
 #<Plugin syslog>
@@ -81,6 +87,7 @@
 #@BUILD_PLUGIN_APPLE_SENSORS_TRUE@LoadPlugin apple_sensors
 #@BUILD_PLUGIN_AQUAERO_TRUE@LoadPlugin aquaero
 #@BUILD_PLUGIN_ASCENT_TRUE@LoadPlugin ascent
+#@BUILD_PLUGIN_BAROMETER_TRUE@LoadPlugin barometer
 #@BUILD_PLUGIN_BATTERY_TRUE@LoadPlugin battery
 #@BUILD_PLUGIN_BIND_TRUE@LoadPlugin bind
 #@BUILD_PLUGIN_CONNTRACK_TRUE@LoadPlugin conntrack
@@ -252,7 +259,17 @@
 #	CACert "/etc/ssl/ca.crt"
 #</Plugin>
 
-#<Plugin bind>
+#<Plugin "barometer">
+#   Device            "/dev/i2c-0";
+#   Oversampling      512
+#   PressureOffset    0.0
+#   TemperatureOffset 0.0
+#   Normalization     2
+#   Altitude          238.0
+#   TemperatureSensor "myserver/onewire-F10FCA000800/temperature"
+#</Plugin>
+
+#<Plugin "bind">
 #  URL "http://localhost:8053/"
 #  ParseTime       false
 #  OpCodes         true
@@ -391,6 +408,8 @@
 #<Plugin disk>
 #	Disk "/^[hs]d[a-f][0-9]?$/"
 #	IgnoreSelected false
+#	UseBSDName false
+#	UdevNameAttr "DEVNAME"
 #</Plugin>
 
 #<Plugin dns>
@@ -492,6 +511,7 @@
 #	IgnoreSelected false
 #	HostnameFormat name
 #	InterfaceFormat name
+#	PluginInstanceFormat name
 #</Plugin>
 
 #<Plugin load>
@@ -577,9 +597,11 @@
 #		Password "secret"
 #		Database "db_name"
 #		MasterStats true
+#		ConnectTimeout 10
 #	</Database>
 #
 #	<Database db_name2>
+#		Alias "squeeze"
 #		Host "localhost"
 #		Socket "/var/run/mysql/mysqld.sock"
 #		SlaveStats true
@@ -1168,6 +1190,11 @@
 #		VerifyPeer true
 #		VerifyHost true
 #		CACert "/etc/ssl/ca.crt"
+#		CAPath "/etc/ssl/certs/"
+#		ClientKey "/etc/ssl/client.pem"
+#		ClientCert "/etc/ssl/client.crt"
+#		ClientKeyPass "secret"
+#		SSLVersion "TLSv1"
 #		Format "Command"
 #		StoreRates false
 #	</URL>

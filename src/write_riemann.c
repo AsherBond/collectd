@@ -1,20 +1,25 @@
 /**
  * collectd - src/write_riemann.c
- *
  * Copyright (C) 2012,2013  Pierre-Yves Ritschard
  * Copyright (C) 2013       Florian octo Forster
  *
- * Permission to use, copy, modify, and distribute this software for any
- * purpose with or without fee is hereby granted, provided that the above
- * copyright notice and this permission notice appear in all copies.
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation
+ * the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following conditions:
  *
- * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- * WHATSOEVER RESULTING FROM LOSS OF MIND, USE, DATA OR PROFITS, WHETHER
- * IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING
- * OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+ * DEALINGS IN THE SOFTWARE.
  *
  * Authors:
  *   Pierre-Yves Ritschard <pyr at spootnik.org>
@@ -39,11 +44,15 @@
 #define RIEMANN_PORT		"5555"
 #define RIEMANN_TTL_FACTOR      2.0
 
+int write_riemann_threshold_check(const data_set_t *, const value_list_t *, int *);
+
 struct riemann_host {
 	char			*name;
 #define F_CONNECT		 0x01
 	uint8_t			 flags;
 	pthread_mutex_t		 lock;
+    _Bool            notifications;
+    _Bool            check_thresholds;
 	_Bool			 store_rates;
 	_Bool			 always_append_ds;
 	char			*node;
@@ -150,7 +159,7 @@ static int riemann_connect(struct riemann_host *host) /* {{{ */
 		}
 
 		host->flags |= F_CONNECT;
-		DEBUG("write_riemann plugin: got a succesful connection for: %s:%s",
+		DEBUG("write_riemann plugin: got a successful connection for: %s:%s",
 				node, service);
 		break;
 	}
@@ -453,7 +462,8 @@ static Msg *riemann_notification_to_protobuf (struct riemann_host *host, /* {{{ 
 static Event *riemann_value_to_protobuf (struct riemann_host const *host, /* {{{ */
 		data_set_t const *ds,
 		value_list_t const *vl, size_t index,
-		gauge_t const *rates)
+					 gauge_t const *rates,
+					 int status)
 {
 	Event *event;
 	char name_buffer[5 * DATA_MAX_NAME_LEN];
@@ -473,6 +483,23 @@ static Event *riemann_value_to_protobuf (struct riemann_host const *host, /* {{{
 	event->host = strdup (vl->host);
 	event->time = CDTIME_T_TO_TIME_T (vl->time);
 	event->has_time = 1;
+
+    if (host->check_thresholds) {
+        switch (status) {
+        case STATE_OKAY:
+            event->state = strdup("ok");
+            break;
+        case STATE_ERROR:
+            event->state = strdup("critical");
+            break;
+        case STATE_WARNING:
+            event->state = strdup("warning");
+            break;
+        case STATE_MISSING:
+            event->state = strdup("unknown");
+            break;
+        }
+    }
 
 	ttl = CDTIME_T_TO_DOUBLE (vl->interval) * host->ttl_factor;
 	event->ttl = (float) ttl;
@@ -557,8 +584,9 @@ static Event *riemann_value_to_protobuf (struct riemann_host const *host, /* {{{
 } /* }}} Event *riemann_value_to_protobuf */
 
 static Msg *riemann_value_list_to_protobuf (struct riemann_host const *host, /* {{{ */
-		data_set_t const *ds,
-		value_list_t const *vl)
+					    data_set_t const *ds,
+					    value_list_t const *vl,
+					    int *statuses)
 {
 	Msg *msg;
 	size_t i;
@@ -598,7 +626,7 @@ static Msg *riemann_value_list_to_protobuf (struct riemann_host const *host, /* 
 	for (i = 0; i < msg->n_events; i++)
 	{
 		msg->events[i] = riemann_value_to_protobuf (host, ds, vl,
-				(int) i, rates);
+							    (int) i, rates, statuses[i]);
 		if (msg->events[i] == NULL)
 		{
 			riemann_msg_protobuf_free (msg);
@@ -616,6 +644,9 @@ static int riemann_notification(const notification_t *n, user_data_t *ud) /* {{{
 	int			 status;
 	struct riemann_host	*host = ud->data;
 	Msg			*msg;
+
+    if (!host->notifications)
+        return 0;
 
 	msg = riemann_notification_to_protobuf (host, n);
 	if (msg == NULL)
@@ -635,10 +666,13 @@ static int riemann_write(const data_set_t *ds, /* {{{ */
 	      user_data_t *ud)
 {
 	int			 status;
+	int			 statuses[vl->values_len];
 	struct riemann_host	*host = ud->data;
 	Msg			*msg;
 
-	msg = riemann_value_list_to_protobuf (host, ds, vl);
+    if (host->check_thresholds)
+        write_riemann_threshold_check(ds, vl, statuses);
+	msg = riemann_value_list_to_protobuf (host, ds, vl, statuses);
 	if (msg == NULL)
 		return (-1);
 
@@ -691,6 +725,8 @@ static int riemann_config_node(oconfig_item_t *ci) /* {{{ */
 	host->reference_count = 1;
 	host->node = NULL;
 	host->service = NULL;
+    host->notifications = 1;
+    host->check_thresholds = 0;
 	host->store_rates = 1;
 	host->always_append_ds = 0;
 	host->use_tcp = 0;
@@ -715,6 +751,14 @@ static int riemann_config_node(oconfig_item_t *ci) /* {{{ */
 			status = cf_util_get_string (child, &host->node);
 			if (status != 0)
 				break;
+        } else if (strcasecmp ("Notifications", child->key) == 0) {
+            status = cf_util_get_boolean(child, &host->notifications);
+            if (status != 0)
+                break;
+        } else if (strcasecmp ("CheckThresholds", child->key) == 0) {
+            status = cf_util_get_boolean(child, &host->check_thresholds);
+            if (status != 0)
+                break;
 		} else if (strcasecmp ("Port", child->key) == 0) {
 			status = cf_util_get_service (child, &host->service);
 			if (status != 0) {
@@ -884,7 +928,7 @@ static int riemann_config(oconfig_item_t *ci) /* {{{ */
 				 child->key);
 		}
 	}
-	return (0);
+    return 0;
 } /* }}} int riemann_config */
 
 void module_register(void)

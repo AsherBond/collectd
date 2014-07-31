@@ -39,7 +39,9 @@ collectd_SOURCES = collectd.c collectd.h \
 		   utils_subst.c utils_subst.h \
 		   utils_tail.c utils_tail.h \
 		   utils_time.c utils_time.h \
-		   types_list.c types_list.h
+		   types_list.c types_list.h \
+		   utils_threshold.c utils_threshold.h
+
 
 collectd_CPPFLAGS =  $(AM_CPPFLAGS) $(LTDLINCL)
 collectd_CFLAGS = $(AM_CFLAGS)
@@ -133,9 +135,9 @@ collectd_tg_LDADD += libcollectdclient/libcollectdclient.la
 collectd_tg_DEPENDENCIES = libcollectdclient/libcollectdclient.la
 
 
-pkglib_LTLIBRARIES = 
+pkglib_LTLIBRARIES =
 
-BUILT_SOURCES = 
+BUILT_SOURCES =
 CLEANFILES =
 
 if BUILD_PLUGIN_AGGREGATION
@@ -217,6 +219,15 @@ collectd_LDADD += "-dlopen" ascent.la
 collectd_DEPENDENCIES += ascent.la
 endif
 
+if BUILD_PLUGIN_BAROMETER
+pkglib_LTLIBRARIES += barometer.la
+barometer_la_SOURCES = barometer.c
+barometer_la_LDFLAGS = -module -avoid-version
+barometer_la_LIBADD = -lm
+collectd_LDADD += "-dlopen" barometer.la
+collectd_DEPENDENCIES += barometer.la
+endif
+
 if BUILD_PLUGIN_BATTERY
 pkglib_LTLIBRARIES += battery.la
 battery_la_SOURCES = battery.c
@@ -273,7 +284,7 @@ pkglib_LTLIBRARIES += cpu.la
 cpu_la_SOURCES = cpu.c
 cpu_la_CFLAGS = $(AM_CFLAGS)
 cpu_la_LDFLAGS = -module -avoid-version
-cpu_la_LIBADD = 
+cpu_la_LIBADD =
 if BUILD_WITH_LIBKSTAT
 cpu_la_LIBADD += -lkstat
 endif
@@ -371,7 +382,7 @@ pkglib_LTLIBRARIES += disk.la
 disk_la_SOURCES = disk.c
 disk_la_CFLAGS = $(AM_CFLAGS)
 disk_la_LDFLAGS = -module -avoid-version
-disk_la_LIBADD = 
+disk_la_LIBADD =
 if BUILD_WITH_LIBKSTAT
 disk_la_LIBADD += -lkstat
 endif
@@ -382,8 +393,11 @@ if BUILD_WITH_LIBIOKIT
 disk_la_LDFLAGS += -framework IOKit
 endif
 if BUILD_WITH_LIBSTATGRAB
-disk_la_CFLAGS += $(BUILD_WITH_LIBSTATGRAB_CFLAGS)  
+disk_la_CFLAGS += $(BUILD_WITH_LIBSTATGRAB_CFLAGS)
 disk_la_LIBADD += $(BUILD_WITH_LIBSTATGRAB_LDFLAGS)
+endif
+if BUILD_WITH_LIBUDEV
+disk_la_LIBADD += -ludev
 endif
 if BUILD_WITH_PERFSTAT
 disk_la_LIBADD += -lperfstat
@@ -575,6 +589,17 @@ logfile_la_SOURCES = logfile.c
 logfile_la_LDFLAGS = -module -avoid-version
 collectd_LDADD += "-dlopen" logfile.la
 collectd_DEPENDENCIES += logfile.la
+endif
+
+if BUILD_PLUGIN_LOG_LOGSTASH
+pkglib_LTLIBRARIES += log_logstash.la
+log_logstash_la_SOURCES = log_logstash.c
+log_logstash_la_CFLAGS = $(AM_CFLAGS)
+log_logstash_la_LDFLAGS = -module -avoid-version $(BUILD_WITH_LIBYAJL_LDFLAGS)
+log_logstash_la_CPPFLAGS = $(AM_CPPFLAGS) $(BUILD_WITH_LIBYAJL_CPPFLAGS)
+log_logstash_la_LIBADD = $(BUILD_WITH_LIBYAJL_LIBS)
+collectd_LDADD += "-dlopen" log_logstash.la
+collectd_DEPENDENCIES += log_logstash.la
 endif
 
 if BUILD_PLUGIN_LPAR
@@ -862,7 +887,7 @@ if BUILD_PLUGIN_OLSRD
 pkglib_LTLIBRARIES += olsrd.la
 olsrd_la_SOURCES = olsrd.c
 olsrd_la_LDFLAGS = -module -avoid-version
-olsrd_la_LIBADD = 
+olsrd_la_LIBADD =
 if BUILD_WITH_LIBSOCKET
 olsrd_la_LIBADD += -lsocket
 endif
@@ -1269,6 +1294,7 @@ pkglib_LTLIBRARIES += unixsock.la
 unixsock_la_SOURCES = unixsock.c \
 		      utils_cmd_flush.h utils_cmd_flush.c \
 		      utils_cmd_getval.h utils_cmd_getval.c \
+		      utils_cmd_getthreshold.h utils_cmd_getthreshold.c \
 		      utils_cmd_listval.h utils_cmd_listval.c \
 		      utils_cmd_putval.h utils_cmd_putval.c \
 		      utils_cmd_putnotif.h utils_cmd_putnotif.c
@@ -1387,6 +1413,19 @@ endif
 collectd_DEPENDENCIES += write_http.la
 endif
 
+if BUILD_PLUGIN_WRITE_KAFKA
+pkglib_LTLIBRARIES += write_kafka.la
+write_kafka_la_SOURCES = write_kafka.c \
+                        utils_format_graphite.c utils_format_graphite.h \
+                        utils_format_json.c utils_format_json.h \
+                        utils_cmd_putval.c utils_cmd_putval.h \
+                        utils_crc32.c utils_crc32.h
+write_kafka_la_LDFLAGS = -module -avoid-version $(BUILD_WITH_LIBRDKAFKA_LDFLAGS)
+write_kafka_la_LIBADD = $(BUILD_WITH_LIBRDKAFKA_LIBS)
+collectd_LDADD += "-dlopen" write_kafka.la
+collectd_DEPENDENCIES += write_kafka.la
+endif
+
 if BUILD_PLUGIN_WRITE_MONGODB
 pkglib_LTLIBRARIES += write_mongodb.la
 write_mongodb_la_SOURCES = write_mongodb.c
@@ -1409,7 +1448,7 @@ endif
 
 if BUILD_PLUGIN_WRITE_RIEMANN
 pkglib_LTLIBRARIES += write_riemann.la
-write_riemann_la_SOURCES = write_riemann.c
+write_riemann_la_SOURCES = write_riemann.c write_riemann_threshold.c
 nodist_write_riemann_la_SOURCES = riemann.pb-c.c riemann.pb-c.h
 write_riemann_la_LDFLAGS = -module -avoid-version
 write_riemann_la_LIBADD = -lprotobuf-c
@@ -1535,15 +1574,48 @@ uninstall-hook:
 	rm -f $(DESTDIR)$(sysconfdir)/collectd.conf
 	rm -f $(DESTDIR)$(pkgdatadir)/postgresql_default.conf;
 
-if BUILD_FEATURE_DEBUG
-bin_PROGRAMS += utils_vl_lookup_test
-utils_vl_lookup_test_SOURCES = utils_vl_lookup_test.c \
+check_PROGRAMS = test_common test_utils_avltree test_utils_heap test_utils_mount test_utils_vl_lookup
+
+test_common_SOURCES = tests/test_common.c \
+                      common.h common.c \
+                      tests/mock/plugin.c \
+                      tests/mock/utils_cache.c \
+                      tests/mock/utils_time.c
+test_common_CPPFLAGS = $(AM_CPPFLAGS) $(LTDLINCL)
+test_common_LDFLAGS = -export-dynamic
+test_common_LDADD =
+
+test_utils_avltree_SOURCES = tests/test_utils_avltree.c \
+                             utils_avltree.c utils_avltree.h
+test_utils_avltree_CPPFLAGS = $(AM_CPPFLAGS) $(LTDLINCL)
+test_utils_avltree_LDFLAGS = -export-dynamic
+test_utils_avltree_LDADD =
+
+test_utils_heap_SOURCES = tests/test_utils_heap.c \
+                          utils_heap.c utils_heap.h
+test_utils_heap_CPPFLAGS = $(AM_CPPFLAGS) $(LTDLINCL)
+test_utils_heap_LDFLAGS = -export-dynamic
+test_utils_heap_LDADD =
+
+test_utils_mount_SOURCES = tests/test_utils_mount.c \
+                           utils_mount.c utils_mount.h \
+                           common.c common.h \
+                           tests/mock/plugin.c \
+                           tests/mock/utils_cache.c \
+                           tests/mock/utils_time.c
+test_utils_mount_CPPFLAGS = $(AM_CPPFLAGS) $(LTDLINCL)
+test_utils_mount_LDFLAGS = -export-dynamic
+test_utils_mount_LDADD =
+
+test_utils_vl_lookup_SOURCES = tests/test_utils_vl_lookup.c \
                                utils_vl_lookup.h utils_vl_lookup.c \
                                utils_avltree.c utils_avltree.h \
-                               common.h
+                               common.c common.h \
+                               tests/mock/plugin.c \
+                               tests/mock/utils_cache.c \
+                               tests/mock/utils_time.c
+test_utils_vl_lookup_CPPFLAGS = $(AM_CPPFLAGS) $(LTDLINCL)
+test_utils_vl_lookup_LDFLAGS = -export-dynamic
+test_utils_vl_lookup_LDADD =
 
-utils_vl_lookup_test_CPPFLAGS =  $(AM_CPPFLAGS) $(LTDLINCL) -DBUILD_TEST=1
-utils_vl_lookup_test_CFLAGS = $(AM_CFLAGS)
-utils_vl_lookup_test_LDFLAGS = -export-dynamic
-utils_vl_lookup_test_LDADD =
-endif
+TESTS = test_common test_utils_avltree test_utils_heap test_utils_mount test_utils_vl_lookup

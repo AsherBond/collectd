@@ -981,7 +981,7 @@ if test "x$fp_layout_type" = "xunknown"; then
 	uint8_t c[8];
 	double d;
 
-	d = 8.642135e130; 
+	d = 8.642135e130;
 	memcpy ((void *) &i0, (void *) &d, 8);
 
 	i1 = i0;
@@ -1036,7 +1036,7 @@ if test "x$fp_layout_type" = "xunknown"; then
 	uint8_t c[8];
 	double d;
 
-	d = 8.642135e130; 
+	d = 8.642135e130;
 	memcpy ((void *) &i0, (void *) &d, 8);
 
 	i1 = endianflip (i0);
@@ -1085,7 +1085,7 @@ if test "x$fp_layout_type" = "xunknown"; then
 	uint8_t c[8];
 	double d;
 
-	d = 8.642135e130; 
+	d = 8.642135e130;
 	memcpy ((void *) &i0, (void *) &d, 8);
 
 	i1 = intswap (i0);
@@ -1237,7 +1237,7 @@ AC_MSG_CHECKING([if have htonll defined])
       have_htonll="yes"
       AC_DEFINE(HAVE_HTONLL, 1, [Define if the function htonll exists.])
     ])
- 
+
 AC_MSG_RESULT([$have_htonll])
 
 # Check for structures
@@ -1380,7 +1380,7 @@ collectd additional packages:])
 
 AM_CONDITIONAL([BUILD_FREEBSD],[test "x$x$ac_system" = "xFreeBSD"])
 
-AM_CONDITIONAL([BUILD_AIX],[test "x$x$ac_system" = "xAIX"]) 
+AM_CONDITIONAL([BUILD_AIX],[test "x$x$ac_system" = "xAIX"])
 
 if test "x$ac_system" = "xAIX"
 then
@@ -2794,7 +2794,7 @@ then
 	else
 		SAVE_CPPFLAGS="$CPPFLAGS"
 		CPPFLAGS="$CPPFLAGS $with_snmp_cflags"
-		
+
 		AC_CHECK_HEADERS(net-snmp/net-snmp-config.h, [], [with_libnetsnmp="no (net-snmp/net-snmp-config.h not found)"])
 
 		CPPFLAGS="$SAVE_CPPFLAGS"
@@ -2982,14 +2982,14 @@ fi
 if test "x$with_oracle" = "xyes"
 then
 	SAVE_CPPFLAGS="$CPPFLAGS"
-	SAVE_LDFLAGS="$LDFLAGS"
+	SAVE_LIBS="$LIBS"
 	CPPFLAGS="$CPPFLAGS $with_oracle_cppflags"
-	LDFLAGS="$LDFLAGS $with_oracle_libs"
+	LIBS="$LIBS $with_oracle_libs"
 
 	AC_CHECK_FUNC(OCIEnvCreate, [with_oracle="yes"], [with_oracle="no (Symbol 'OCIEnvCreate' not found)"])
 
 	CPPFLAGS="$SAVE_CPPFLAGS"
-	LDFLAGS="$SAVE_LDFLAGS"
+	LIBS="$SAVE_LIBS"
 fi
 if test "x$with_oracle" = "xyes"
 then
@@ -3021,7 +3021,7 @@ if test "x$with_libowcapi" = "xyes"
 then
 	SAVE_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$with_libowcapi_cppflags"
-	
+
 	AC_CHECK_HEADERS(owcapi.h, [with_libowcapi="yes"], [with_libowcapi="no (owcapi.h not found)"])
 
 	CPPFLAGS="$SAVE_CPPFLAGS"
@@ -3032,7 +3032,7 @@ then
 	SAVE_CPPFLAGS="$CPPFLAGS"
 	LDFLAGS="$with_libowcapi_libs"
 	CPPFLAGS="$with_libowcapi_cppflags"
-	
+
 	AC_CHECK_LIB(owcapi, OW_get, [with_libowcapi="yes"], [with_libowcapi="no (libowcapi not found)"])
 
 	LDFLAGS="$SAVE_LDFLAGS"
@@ -3597,6 +3597,49 @@ LDFLAGS="$SAVE_LDFLAGS"
 AM_CONDITIONAL(BUILD_WITH_LIBRABBITMQ, test "x$with_librabbitmq" = "xyes")
 # }}}
 
+# --with-librdkafka {{{
+AC_ARG_WITH(librdkafka, [AS_HELP_STRING([--with-librdkafka@<:@=PREFIX@:>@], [Path to librdkafka.])],
+[
+  if test "x$withval" = "xno" && test "x$withval" != "xyes"
+  then
+    with_librdkafka_cppflags="-I$withval/include"
+    with_librdkafka_ldflags="-L$withval/lib"
+    with_librdkafka="yes"
+  else
+    with_librdkafka="$withval"
+  fi
+],
+[
+  with_librdkafka="yes"
+])
+SAVE_CPPFLAGS="$CPPFLAGS"
+SAVE_LDFLAGS="$LDFLAGS"
+
+if test "x$with_librdkafka" = "xyes"
+then
+	AC_CHECK_HEADERS(librdkafka/rdkafka.h, [with_librdkafka="yes"], [with_librdkafka="no (librdkafka/rdkafka.h not found)"])
+fi
+
+if test "x$with_librdkafka" = "xyes"
+then
+	AC_CHECK_LIB(rdkafka, rd_kafka_new, [with_librdkafka="yes"], [with_librdkafka="no (Symbol 'rd_kafka_new' not found)"])
+fi
+if test "x$with_librdkafka" = "xyes"
+then
+	BUILD_WITH_LIBRDKAFKA_CPPFLAGS="$with_librdkafka_cppflags"
+	BUILD_WITH_LIBRDKAFKA_LDFLAGS="$with_librdkafka_ldflags"
+	BUILD_WITH_LIBRDKAFKA_LIBS="-lrdkafka"
+	AC_SUBST(BUILD_WITH_LIBRDKAFKA_CPPFLAGS)
+	AC_SUBST(BUILD_WITH_LIBRDKAFKA_LDFLAGS)
+	AC_SUBST(BUILD_WITH_LIBRDKAFKA_LIBS)
+	AC_DEFINE(HAVE_LIBRDKAFKA, 1, [Define if librdkafka is present and usable.])
+fi
+CPPFLAGS="$SAVE_CPPFLAGS"
+LDFLAGS="$SAVE_LDFLAGS"
+AM_CONDITIONAL(BUILD_WITH_LIBRDKAFKA, test "x$with_librdkafka" = "xyes")
+
+# }}}
+
 # --with-librouteros {{{
 AC_ARG_WITH(librouteros, [AS_HELP_STRING([--with-librouteros@<:@=PREFIX@:>@], [Path to librouteros.])],
 [
@@ -4039,7 +4082,7 @@ CPPFLAGS="$SAVE_CPPFLAGS"
 LDFLAGS="$SAVE_LDFLAGS"
 
 if test "x$with_libtokyotyrant" = "xyes"
-then 
+then
   BUILD_WITH_LIBTOKYOTYRANT_CPPFLAGS="$with_libtokyotyrant_cppflags"
   BUILD_WITH_LIBTOKYOTYRANT_LDFLAGS="$with_libtokyotyrant_ldflags"
   BUILD_WITH_LIBTOKYOTYRANT_LIBS="$with_libtokyotyrant_libs"
@@ -4048,6 +4091,67 @@ then
   AC_SUBST(BUILD_WITH_LIBTOKYOTYRANT_LIBS)
 fi
 AM_CONDITIONAL(BUILD_WITH_LIBTOKYOTYRANT, test "x$with_libtokyotyrant" = "xyes")
+# }}}
+
+# --with-libudev {{{
+with_libudev_cflags=""
+with_libudev_ldflags=""
+AC_ARG_WITH(libudev, [AS_HELP_STRING([--with-libudev@<:@=PREFIX@:>@], [Path to libudev.])],
+[
+	if test "x$withval" = "xno"
+	then
+		with_libudev="no"
+	else
+		with_libudev="yes"
+		if test "x$withval" != "xyes"
+		then
+			with_libudev_cflags="-I$withval/include"
+			with_libudev_ldflags="-L$withval/lib"
+			with_libudev="yes"
+		fi
+	fi
+],
+[
+	if test "x$ac_system" = "xLinux"
+	then
+		with_libudev="yes"
+	else
+		with_libudev="no (Linux only library)"
+	fi
+])
+if test "x$with_libudev" = "xyes"
+then
+	SAVE_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$CPPFLAGS $with_libudev_cflags"
+
+	AC_CHECK_HEADERS(libudev.h, [], [with_libudev="no (libudev.h not found)"])
+
+	CPPFLAGS="$SAVE_CPPFLAGS"
+fi
+if test "x$with_libudev" = "xyes"
+then
+	SAVE_CPPFLAGS="$CPPFLAGS"
+	SAVE_LDFLAGS="$LDFLAGS"
+	CPPFLAGS="$CPPFLAGS $with_libudev_cflags"
+	LDFLAGS="$LDFLAGS $with_libudev_ldflags"
+
+	AC_CHECK_LIB(udev, udev_new,
+	[
+		AC_DEFINE(HAVE_LIBUDEV, 1, [Define to 1 if you have the udev library (-ludev).])
+	],
+	[with_libudev="no (libudev not found)"])
+
+	CPPFLAGS="$SAVE_CPPFLAGS"
+	LDFLAGS="$SAVE_LDFLAGS"
+fi
+if test "x$with_libudev" = "xyes"
+then
+	BUILD_WITH_LIBUDEV_CFLAGS="$with_libudev_cflags"
+	BUILD_WITH_LIBUDEV_LDFLAGS="$with_libudev_ldflags"
+	AC_SUBST(BUILD_WITH_LIBUDEV_CFLAGS)
+	AC_SUBST(BUILD_WITH_LIBUDEV_LDFLAGS)
+fi
+AM_CONDITIONAL(BUILD_WITH_LIBUDEV, test "x$with_libudev" = "xyes")
 # }}}
 
 # --with-libupsclient {{{
@@ -4786,6 +4890,7 @@ dependency_warning="no"
 dependency_error="no"
 
 plugin_ascent="no"
+plugin_barometer="no"
 plugin_battery="no"
 plugin_bind="no"
 plugin_cgroups="no"
@@ -4806,6 +4911,7 @@ plugin_ipvs="no"
 plugin_irq="no"
 plugin_libvirt="no"
 plugin_load="no"
+plugin_log_logstash="no"
 plugin_memory="no"
 plugin_multimeter="no"
 plugin_nfs="no"
@@ -4923,6 +5029,23 @@ then
 	plugin_tape="yes"
 fi
 
+# libi2c-dev
+with_libi2c="no"
+if test "x$ac_system" = "xLinux"
+then
+AC_CHECK_DECL(i2c_smbus_read_i2c_block_data,
+	[with_libi2c="yes"],
+	[with_libi2c="no (symbol i2c_smbus_read_i2c_block_data not found - have you installed libi2c-dev ?)"],
+	[[#include <stdlib.h>
+	#include <linux/i2c-dev.h>]])
+fi
+
+if test "x$with_libi2c" = "xyes"
+then
+	plugin_barometer="yes"
+fi
+
+
 # libstatgrab
 if test "x$with_libstatgrab" = "xyes"
 then
@@ -5036,6 +5159,11 @@ then
 	plugin_load="yes"
 fi
 
+if test "x$with_libyajl" = "xyes"
+then
+	plugin_log_logstash="yes"
+fi
+
 if test "x$c_cv_have_libperl$c_cv_have_perl_ithreads" = "xyesyes"
 then
 	plugin_perl="yes"
@@ -5049,7 +5177,10 @@ fi
 
 if test "x$have_termios_h" = "xyes"
 then
-	plugin_multimeter="yes"
+	if test "x$ac_system" != "xAIX"
+	then
+		plugin_multimeter="yes"
+	fi
 	plugin_ted="yes"
 fi
 
@@ -5114,6 +5245,7 @@ AC_PLUGIN([apcups],      [yes],                [Statistics of UPSes by APC])
 AC_PLUGIN([apple_sensors], [$with_libiokit],   [Apple's hardware sensors])
 AC_PLUGIN([aquaero],     [$with_libaquaero5],  [Aquaero's hardware sensors])
 AC_PLUGIN([ascent],      [$plugin_ascent],     [AscentEmu player statistics])
+AC_PLUGIN([barometer],   [$plugin_barometer],  [Barometer sensor on I2C])
 AC_PLUGIN([battery],     [$plugin_battery],    [Battery statistics])
 AC_PLUGIN([bind],        [$plugin_bind],       [ISC Bind nameserver statistics])
 AC_PLUGIN([conntrack],   [$plugin_conntrack],  [nf_conntrack statistics])
@@ -5146,6 +5278,7 @@ AC_PLUGIN([java],        [$with_java],         [Embed the Java Virtual Machine])
 AC_PLUGIN([libvirt],     [$plugin_libvirt],    [Virtual machine statistics])
 AC_PLUGIN([load],        [$plugin_load],       [System load])
 AC_PLUGIN([logfile],     [yes],                [File logging plugin])
+AC_PLUGIN([log_logstash], [$plugin_log_logstash], [Logstash json_event compatible logging])
 AC_PLUGIN([lpar],        [$with_perfstat],     [AIX logical partitions statistics])
 AC_PLUGIN([lvm],         [$with_liblvm2app],   [LVM statistics])
 AC_PLUGIN([madwifi],     [$have_linux_wireless_h], [Madwifi wireless statistics])
@@ -5223,6 +5356,7 @@ AC_PLUGIN([vserver],     [$plugin_vserver],    [Linux VServer statistics])
 AC_PLUGIN([wireless],    [$plugin_wireless],   [Wireless statistics])
 AC_PLUGIN([write_graphite], [yes],             [Graphite / Carbon output plugin])
 AC_PLUGIN([write_http],  [$with_libcurl],      [HTTP output plugin])
+AC_PLUGIN([write_kafka],  [$with_librdkafka],  [Kafka output plugin])
 AC_PLUGIN([write_mongodb], [$with_libmongoc],  [MongoDB output plugin])
 AC_PLUGIN([write_redis], [$with_libcredis],    [Redis output plugin])
 AC_PLUGIN([write_riemann], [$have_protoc_c],   [Riemann output plugin])
@@ -5233,6 +5367,7 @@ dnl Default configuration file
 # Load either syslog or logfile
 LOAD_PLUGIN_SYSLOG=""
 LOAD_PLUGIN_LOGFILE=""
+LOAD_PLUGIN_LOG_LOGSTASH=""
 
 AC_MSG_CHECKING([which default log plugin to load])
 default_log_plugin="none"
@@ -5254,10 +5389,20 @@ then
 else
 	LOAD_PLUGIN_LOGFILE="##"
 fi
+
+if test "x$enable_logfile" = "xyes"
+then
+  LOAD_PLUGIN_LOG_LOGSTASH="#"
+else
+  LOAD_PLUGIN_LOG_LOGSTASH="##"
+fi
+
+
 AC_MSG_RESULT([$default_log_plugin])
 
 AC_SUBST(LOAD_PLUGIN_SYSLOG)
 AC_SUBST(LOAD_PLUGIN_LOGFILE)
+AC_SUBST(LOAD_PLUGIN_LOG_LOGSTASH)
 
 DEFAULT_LOG_LEVEL="info"
 if test "x$enable_debug" = "xyes"
@@ -5406,6 +5551,7 @@ Configuration:
     libesmtp  . . . . . . $with_libesmtp
     libganglia  . . . . . $with_libganglia
     libgcrypt . . . . . . $with_libgcrypt
+    libi2c-dev  . . . . . $with_libi2c
     libiokit  . . . . . . $with_libiokit
     libiptc . . . . . . . $with_libiptc
     libjvm  . . . . . . . $with_java
@@ -5427,12 +5573,14 @@ Configuration:
     libpq . . . . . . . . $with_libpq
     libpthread  . . . . . $with_libpthread
     librabbitmq . . . . . $with_librabbitmq
+    librdkafka  . . . . . $with_librdkafka
     librouteros . . . . . $with_librouteros
     librrd  . . . . . . . $with_librrd
     libsensors  . . . . . $with_libsensors
     libsigrok   . . . . . $with_libsigrok
     libstatgrab . . . . . $with_libstatgrab
     libtokyotyrant  . . . $with_libtokyotyrant
+    libudev . . . . . . . $with_libudev
     libupsclient  . . . . $with_libupsclient
     libvarnish  . . . . . $with_libvarnish
     libvirt . . . . . . . $with_libvirt
@@ -5459,6 +5607,7 @@ Configuration:
     aquaero . . . . . . . $enable_aquaero
     apple_sensors . . . . $enable_apple_sensors
     ascent  . . . . . . . $enable_ascent
+    barometer . . . . . . $enable_barometer
     battery . . . . . . . $enable_battery
     bind  . . . . . . . . $enable_bind
     conntrack . . . . . . $enable_conntrack
@@ -5492,6 +5641,7 @@ Configuration:
     load  . . . . . . . . $enable_load
     logfile . . . . . . . $enable_logfile
     lpar  . . . . . . . . $enable_lpar
+    log_logstash  . . . . $enable_log_logstash
     lvm . . . . . . . . . $enable_lvm
     madwifi . . . . . . . $enable_madwifi
     match_empty_counter . $enable_match_empty_counter
@@ -5567,6 +5717,7 @@ Configuration:
     wireless  . . . . . . $enable_wireless
     write_graphite  . . . $enable_write_graphite
     write_http  . . . . . $enable_write_http
+    write_kafka . . . . . $enable_write_kafka
     write_mongodb . . . . $enable_write_mongodb
     write_redis . . . . . $enable_write_redis
     write_riemann . . . . $enable_write_riemann

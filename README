@@ -32,6 +32,10 @@ Features
     - ascent
       Statistics about Ascent, a free server for the game `World of Warcraft'.
 
+    - barometer
+      Using digital barometer sensor MPL115A2 or MPL3115 from Freescale provides
+      absolute barometric pressure, air pressure reduced to sea level and temperature.
+
     - battery
       Batterycharge, -current and voltage of ACPI and PMU based laptop
       batteries.
@@ -404,6 +408,9 @@ Features
       requests. The transmitted data is either in a form understood by the
       Exec plugin or formatted in JSON.
 
+    - write_kafka
+      Sends data to Apache Kafka, a distributed queue.
+
     - write_mongodb
       Sends data to MongoDB, a NoSQL database.
 
@@ -614,6 +621,9 @@ Prerequisites
     If present, the uuid plugin will check for UUID from HAL.
     <http://hal.freedesktop.org/>
 
+  * libi2c-dev (optional)
+    Used for the plugin `barometer', provides just the i2c-dev.h header file for user space i2c development.
+
   * libiptc (optional)
     For querying iptables counters.
     <http://netfilter.org/>
@@ -662,7 +672,7 @@ Prerequisites
 
   * liboping (optional)
     Used by the `ping' plugin to send and receive ICMP packets.
-    <http://verplant.org/liboping/>
+    <http://octo.it/liboping/>
 
   * libowcapi (optional)
     Used by the `onewire' plugin to read values from onewire sensors (or the
@@ -699,9 +709,13 @@ Prerequisites
     Used by the AMQP plugin for AMQP connections, for example to RabbitMQ.
     <http://hg.rabbitmq.com/rabbitmq-c/>
 
+  * librdkafka (optional; also called “rdkafka”)
+    Used by the Kafka plugin for producing.
+    <https://github.com/edenhill/librdkafka>
+
   * librouteros (optional)
     Used by the `routeros' plugin to connect to a device running `RouterOS'.
-    <http://verplant.org/librouteros/>
+    <http://octo.it/librouteros/>
 
   * librrd (optional)
     Used by the `rrdtool' and `rrdcached' plugins. The latter requires RRDtool
@@ -857,7 +871,7 @@ Contact
 
   For questions, bug reports, development information and basically all other
   concerns please send an email to collectd's mailing list at
-  <collectd at verplant.org>.
+  <list at collectd.org>.
 
   For live discussion and more personal contact visit us in IRC, we're in
   channel #collectd on freenode.
@@ -866,7 +880,7 @@ Contact
 Author
 ------
 
-  Florian octo Forster <octo at verplant.org>,
+  Florian octo Forster <octo at collectd.org>,
   Sebastian tokkee Harl <sh at tokkee.org>,
   and many contributors (see `AUTHORS').
 
