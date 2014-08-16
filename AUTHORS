@@ -47,6 +47,9 @@ Aurélien Reynaud <collectd at wattapower.net>
  - LPAR plugin.
  - Various fixes for AIX, HP-UX and Solaris.
 
+Benjamin Gilbert <bgilbert at cs.cmu.edu>
+ - Improvements to the LVM plugin.
+
 Bert Vermeulen <bert at biot.com>
  - sigrok plugin
 
@@ -234,6 +237,9 @@ Stefan Hacker <stefan.hacker at web.de>
 Sven Trenkel <collectd at semidefinite.de>
  - netapp plugin.
  - python plugin.
+
+Tim Laszlo <tim.laszlo at gmail.com>
+ - drbd plugin
 
 Thomas Meson <zllak at hycik.org>
  - Graphite support for the AMQP plugin.

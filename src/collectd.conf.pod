@@ -1339,6 +1339,11 @@ The following options are valid within B<URL> blocks:
 
 Sets the plugin instance to I<Instance>.
 
+=item B<Interval> I<Interval>
+
+Sets the interval (in seconds) in which the values will be collected from this
+URL. By default the global B<Interval> setting will be used.
+
 =item B<User> I<Name>
 
 =item B<Password> I<Password>
@@ -3067,6 +3072,11 @@ Specifies the path to the UNIX domain socket of the MySQL server. This option
 only has any effect, if B<Host> is set to B<localhost> (the default).
 Otherwise, use the B<Port> option above. See the documentation for the
 C<mysql_real_connect> function for details.
+
+=item B<InnodbStats> I<true|false>
+
+If enabled, metrics about the InnoDB storage engine are collected.
+Disabled by default.
 
 =item B<MasterStats> I<true|false>
 
@@ -4862,13 +4872,6 @@ Specify the password to be used when connecting to the server.
 Specify whether to use an SSL connection when contacting the server. The
 following modes are supported:
 
-=item B<Instance> I<name>
-
-Specify the plugin instance name that should be used instead of the database
-name (which is the default, if this option has not been specified). This
-allows to query multiple databases of the same name on the same host (e.g.
-when running multiple database server versions in parallel).
-
 =over 4
 
 =item I<disable>
@@ -4888,6 +4891,13 @@ First, try to connect using SSL. If that fails, try without using SSL.
 Use SSL only.
 
 =back
+
+=item B<Instance> I<name>
+
+Specify the plugin instance name that should be used instead of the database
+name (which is the default, if this option has not been specified). This
+allows to query multiple databases of the same name on the same host (e.g.
+when running multiple database server versions in parallel).
 
 =item B<KRBSrvName> I<kerberos_service_name>
 

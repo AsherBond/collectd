@@ -1710,6 +1710,7 @@ then
 	LDFLAGS="$LDFLAGS $with_libdbi_ldflags"
 
 	AC_CHECK_LIB(dbi, dbi_initialize, [with_libdbi="yes"], [with_libdbi="no (Symbol 'dbi_initialize' not found)"])
+	AC_CHECK_LIB(dbi, dbi_driver_open_r, [with_libdbi_r="yes"], [with_libdbi_r="no"])
 
 	CPPFLAGS="$SAVE_CPPFLAGS"
 	LDFLAGS="$SAVE_LDFLAGS"
@@ -1722,6 +1723,11 @@ then
 	AC_SUBST(BUILD_WITH_LIBDBI_CPPFLAGS)
 	AC_SUBST(BUILD_WITH_LIBDBI_LDFLAGS)
 	AC_SUBST(BUILD_WITH_LIBDBI_LIBS)
+
+  if test "x$with_libdbi_r" = "xyes"
+  then
+		AC_DEFINE(HAVE_LIBDBI_R, 1, [Define if reentrant dbi facility is present and usable.])
+  fi
 fi
 AM_CONDITIONAL(BUILD_WITH_LIBDBI, test "x$with_libdbi" = "xyes")
 # }}}
@@ -1940,10 +1946,7 @@ AM_CONDITIONAL(BUILD_WITH_LIBGCRYPT, test "x$with_libgcrypt" = "xyes")
 # --with-libiptc {{{
 AC_ARG_WITH(libiptc, [AS_HELP_STRING([--with-libiptc@<:@=PREFIX@:>@], [Path to libiptc.])],
 [
-	if test "x$withval" = "xshipped"
-	then
-		with_libiptc="own"
-	else if test "x$withval" = "xyes"
+	if test "x$withval" = "xyes"
 	then
 		with_libiptc="pkgconfig"
 	else if test "x$withval" = "xno"
@@ -1953,7 +1956,7 @@ AC_ARG_WITH(libiptc, [AS_HELP_STRING([--with-libiptc@<:@=PREFIX@:>@], [Path to l
 		with_libiptc="yes"
 		with_libiptc_cflags="-I$withval/include"
 		with_libiptc_libs="-L$withval/lib"
-	fi; fi; fi
+	fi; fi
 ],
 [
 	if test "x$ac_system" = "xLinux"
@@ -2024,28 +2027,6 @@ then
 fi
 
 CPPFLAGS="$SAVE_CPPFLAGS"
-
-if test "x$with_libiptc" = "xown"
-then
-	with_libiptc_cflags=""
-	with_libiptc_libs=""
-fi
-if test "x$with_libiptc" = "xown"
-then
-	AC_CHECK_HEADERS(linux/netfilter_ipv4/ip_tables.h linux/netfilter_ipv6/ip6_tables.h linux/netfilter/x_tables.h, [],
-	[
-		with_libiptc="no (Linux iptables headers not found)"
-	],
-	[
-#include "$srcdir/src/owniptc/ipt_kernel_headers.h"
-	])
-fi
-AM_CONDITIONAL(BUILD_WITH_OWN_LIBIPTC, test "x$with_libiptc" = "xown")
-if test "x$with_libiptc" = "xown"
-then
-	AC_DEFINE(OWN_LIBIPTC, 1, [Define to 1 if we use the shipped iptc library.])
-	with_libiptc="yes"
-fi
 
 AM_CONDITIONAL(BUILD_WITH_LIBIPTC, test "x$with_libiptc" = "xyes")
 if test "x$with_libiptc" = "xyes"
@@ -2260,7 +2241,7 @@ then
         CPPFLAGS="$CPPFLAGS $with_liblvm2app_cppflags"
         LDFLAGS="$LDFLAGS $with_liblvm2app_ldflags"
 
-        AC_CHECK_LIB(lvm2app, lvm_init, [with_liblvm2app="yes"], [with_liblvm2app="no (Symbol 'lvm_init' not found)"])
+        AC_CHECK_LIB(lvm2app, lvm_lv_get_property, [with_liblvm2app="yes"], [with_liblvm2app="no (Symbol 'lvm_lv_get_property' not found)"])
 
         CPPFLAGS="$SAVE_CPPFLAGS"
         LDFLAGS="$SAVE_LDFLAGS"
@@ -3623,6 +3604,8 @@ fi
 if test "x$with_librdkafka" = "xyes"
 then
 	AC_CHECK_LIB(rdkafka, rd_kafka_new, [with_librdkafka="yes"], [with_librdkafka="no (Symbol 'rd_kafka_new' not found)"])
+  AC_CHECK_LIB(rdkafka, rd_kafka_conf_set_log_cb, [with_librdkafka_log_cb="yes"], [with_librdkafka_log_cb="no"])
+  AC_CHECK_LIB(rdkafka, rd_kafka_conf_set_logger, [with_librdkafka_logger="yes"], [with_librdkafka_logger="no"])
 fi
 if test "x$with_librdkafka" = "xyes"
 then
@@ -3633,6 +3616,14 @@ then
 	AC_SUBST(BUILD_WITH_LIBRDKAFKA_LDFLAGS)
 	AC_SUBST(BUILD_WITH_LIBRDKAFKA_LIBS)
 	AC_DEFINE(HAVE_LIBRDKAFKA, 1, [Define if librdkafka is present and usable.])
+  if test "x$with_librdkafka_log_cb" = "xyes"
+  then
+        AC_DEFINE(HAVE_LIBRDKAFKA_LOG_CB, 1, [Define if librdkafka log facility is present and usable.])
+  fi
+  if test "x$with_librdkafka_logger" = "xyes"
+  then
+        AC_DEFINE(HAVE_LIBRDKAFKA_LOGGER, 1, [Define if librdkafka log facility is present and usable.])
+  fi
 fi
 CPPFLAGS="$SAVE_CPPFLAGS"
 LDFLAGS="$SAVE_LDFLAGS"
@@ -4902,6 +4893,7 @@ plugin_curl_json="no"
 plugin_curl_xml="no"
 plugin_df="no"
 plugin_disk="no"
+plugin_drbd="no"
 plugin_entropy="no"
 plugin_ethstat="no"
 plugin_fscache="no"
@@ -4942,6 +4934,7 @@ then
 	plugin_cpu="yes"
 	plugin_cpufreq="yes"
 	plugin_disk="yes"
+	plugin_drbd="yes"
 	plugin_entropy="yes"
 	plugin_fscache="yes"
 	plugin_interface="yes"
@@ -5260,6 +5253,7 @@ AC_PLUGIN([cgroups],     [$plugin_cgroups],    [CGroups CPU usage accounting])
 AC_PLUGIN([dbi],         [$with_libdbi],       [General database statistics])
 AC_PLUGIN([df],          [$plugin_df],         [Filesystem usage statistics])
 AC_PLUGIN([disk],        [$plugin_disk],       [Disk usage statistics])
+AC_PLUGIN([drbd],        [$plugin_drbd],       [DRBD statistics])
 AC_PLUGIN([dns],         [$with_libpcap],      [DNS traffic analysis])
 AC_PLUGIN([email],       [yes],                [EMail statistics])
 AC_PLUGIN([entropy],     [$plugin_entropy],    [Entropy statistics])
@@ -5557,6 +5551,7 @@ Configuration:
     libjvm  . . . . . . . $with_java
     libkstat  . . . . . . $with_kstat
     libkvm  . . . . . . . $with_libkvm
+    liblvm2app  . . . . . $with_liblvm2app
     libmemcached  . . . . $with_libmemcached
     libmnl  . . . . . . . $with_libmnl
     libmodbus . . . . . . $with_libmodbus
@@ -5623,6 +5618,7 @@ Configuration:
     df  . . . . . . . . . $enable_df
     disk  . . . . . . . . $enable_disk
     dns . . . . . . . . . $enable_dns
+    drbd  . . . . . . . . $enable_drbd
     email . . . . . . . . $enable_email
     entropy . . . . . . . $enable_entropy
     ethstat . . . . . . . $enable_ethstat
