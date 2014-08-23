@@ -5,7 +5,7 @@ Florian "octo" Forster <octo at verplant.org>
  - Initial author.
 
 Sebastian "tokkee" Harl <sh at tokkee.org>
- - Bugfixes and enhancments in many places all around the project.
+ - Bugfixes and enhancements in many places all around the project.
  - perl plugin.
  - users plugin.
  - vserver plugin.
@@ -53,9 +53,12 @@ Benjamin Gilbert <bgilbert at cs.cmu.edu>
 Bert Vermeulen <bert at biot.com>
  - sigrok plugin
 
+Brett Hawn <bhawn at llnw.com>
+ - write_tsdb plugin for http://opentsdb.net/
+
 Bruno Prémont <bonbons at linux-vserver.org>
  - BIND plugin.
- - Many bugreports and -fixes in various plugins,
+ - Many bug reports and -fixes in various plugins,
    especially a nasty bug in the network plugin.
  - Wireshark dissector.
 
@@ -111,6 +114,9 @@ J. Javier Maestro <jjmaestro at ieee.org>
 
 Jérôme Renard <jerome.renard at gmail.com>
  - varnish plugin.
+
+Kevin Bowling <kbowling at llnw.com>
+ - write_tsdb plugin for http://opentsdb.net/
 
 Kris Nielander <nielander at fox-it.com>
  - tail_csv plugin.
